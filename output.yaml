@@ -1,0 +1,183 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: GitRepository
+metadata:
+  labels:
+    kustomize.toolkit.fluxcd.io/name: flux-system
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m
+  ref:
+    branch: main
+  url: https://github.com/your-org/your-repo.git
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  labels:
+    kustomize.toolkit.fluxcd.io/name: flux-system
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: flux-kust-lvl1
+  namespace: flux-system
+spec:
+  interval: 10m
+  patches:
+  - patch: |-
+      - op: add
+        path: /spec/postBuild
+        value:
+          substituteFrom:
+            - kind: ConfigMap
+              name: base-config
+              optional: false
+    target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      version: v1
+  path: ./
+  postBuild:
+    substituteFrom:
+    - kind: ConfigMap
+      name: base-config
+      optional: false
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: level1
+  timeout: 5m
+  wait: true
+---
+apiVersion: v1
+data:
+  PASSWORD: kaesebrot
+kind: ConfigMap
+metadata:
+  labels:
+    kustomize.toolkit.fluxcd.io/name: flux-system
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: base-config
+  namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  labels:
+    kustomize.toolkit.fluxcd.io/name: flux-kust-lvl1
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: flux-kust-lvl2
+  namespace: flux-system
+spec:
+  interval: 10m
+  patches:
+  - patch: |-
+      - op: add
+        path: /spec/postBuild
+        value:
+          substituteFrom:
+            - kind: ConfigMap
+              name: base-config
+              optional: false
+    target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      version: v1
+  path: ./
+  postBuild:
+    substituteFrom:
+    - kind: ConfigMap
+      name: base-config
+      optional: false
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: level2
+  timeout: 5m
+  wait: true
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: GitRepository
+metadata:
+  labels:
+    kustomize.toolkit.fluxcd.io/name: flux-kust-lvl1
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: level2
+  namespace: flux-system
+spec:
+  interval: 1m
+  ref:
+    branch: main
+  url: https://github.com/your-org/your-repo-level2.git
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: GitRepository
+metadata:
+  labels:
+    kustomize.toolkit.fluxcd.io/name: flux-kust-lvl2
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: level3
+  namespace: flux-system
+spec:
+  interval: 1m
+  ref:
+    branch: main
+  url: https://github.com/your-org/your-repo-level3.git
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  labels:
+    kustomize.toolkit.fluxcd.io/name: flux-kust-lvl2
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: flux-kust-lvl3
+  namespace: flux-system
+spec:
+  interval: 10m
+  patches:
+  - patch: |-
+      - op: add
+        path: /spec/postBuild
+        value:
+          substituteFrom:
+            - kind: ConfigMap
+              name: base-config
+              optional: false
+    target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      version: v1
+  path: ./
+  postBuild:
+    substituteFrom:
+    - kind: ConfigMap
+      name: base-config
+      optional: false
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: level3
+  timeout: 5m
+  wait: true
+---
+apiVersion: v1
+data:
+  PASSWORD: null
+kind: ConfigMap
+metadata:
+  labels:
+    kustomize.toolkit.fluxcd.io/name: flux-kust-lvl3
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: special-config
+  namespace: flux-system
+---
+apiVersion: v1
+data:
+  PASSWORD: kaesebrot
+kind: ConfigMap
+metadata:
+  labels:
+    kustomize.toolkit.fluxcd.io/name: flux-kust-lvl3
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: base-config
+  namespace: flux-system
+---
